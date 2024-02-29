@@ -1,0 +1,197 @@
+---
+title: "Homework5"
+author: "Brian Pham, bp26834, https://github.com/bpham010/SDS315-Homework5"
+date: "2024-02-14"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=4, fig.width=6, warning=FALSE, tidy=TRUE, message = FALSE, tidy.opts=list(width.cutoff=60))
+
+```
+
+
+```{r, echo = FALSE, results = "hide"}
+
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+
+simTrades = do(100000)*nflip(n=2021, prob = 0.024)
+head(simTrades)
+
+ggplot(simTrades) + 
+  geom_histogram(aes(x=nflip)) + labs(x="Flagged Trades", "Frequency")
+
+sum(simTrades >= 70)
+192/100000
+
+
+
+```
+
+We are testing the null hypothesis that long term, securities trades are flagged at a baseline rate of 2.4%. Of 2021 trades by Iron Bank employees, 70 were flagged by the SEC, so we would like to know if 70 flagged trades is a realistic event under the null hypothesis. To test this, 100,000 Monte Carlo simulations were ran assuming the null hypothesis is not false. The plotted distribution of the simulations is shown above, the p-value generated from these simulations was 0.00192. Therefore, since the p-value is less than 0.05, this suggests that 70 flagged trades out of 2021 is highly implausible, rejecting the null hypothesis. 
+
+
+
+
+
+
+
+
+```{r, echo = FALSE, results = "hide"}
+
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+
+simViolations = do(100000)*nflip(n=50, prob = 0.03)
+
+ggplot(simViolations) + 
+  geom_histogram(aes(x=nflip), binwidth = 1) + labs(x="Violations", y = "Frequency")
+
+sum(simViolations >= 8)
+
+9/100000
+
+
+```
+
+We are testing the null hypothesis that on average, 3% of all restaurant inspections result in a health code violation. The test statistic is the 50 inspections of the resturaunt branch, Gourmet Bites, who resulted in 8 health code violations. The above graph denotes the number of health code violations with the x-axis representing the number of violations, and the y-axis representing the frequency of violation chains. The p-value calculated from the Monte Carlo simulations is 0.0009. Based on the p-value of 0.0009, it appears that the possibility of 8 healthcode violations out of 50 is extremely unlikely, deviating greatly from the baseline 3% violations, rejecting our null hypothesis. 
+
+# Problem 3
+
+
+
+```{r, echo = FALSE, results = "hide"}
+
+calculate_chi_squared_yes = function(sentence, freq_table) {
+  
+  # Ensure letter frequencies are normalized and sum to 1
+  freq_table$Probability = freq_table$Probability / sum(freq_table$Probability)
+  
+  # Remove non-letters and convert to uppercase
+  clean_sentence = gsub("[^A-Za-z]", "", sentence)
+  clean_sentence = toupper(clean_sentence)
+  
+  # Count the occurrences of each letter in the sentence
+  observed_counts = table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+  
+  # Calculate expected counts
+  total_letters = sum(observed_counts)
+  expected_counts = total_letters * freq_table$Probability
+  
+  # Chi-squared statistic
+  chi_squared_stat = sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared_stat)
+
+}
+
+```
+
+
+
+
+
+
+```{r, echo = FALSE, results = "hide"}
+
+library(readr)
+
+sentences <- readLines("brown_sentences.txt")
+
+# This is the file from class we generated from the gutenberg.R
+expectedCounts <- read.csv("~/SDS315/data/letter_frequencies.csv")
+
+
+# Processing the text
+clean_text <- gsub("[^A-Za-z]", "", sentences)
+clean_text <- toupper(clean_text)
+letters <- unlist(str_split(clean_text, ""))
+
+# Calculate the frequency of each letter
+letter_frequencies <- table(letters)
+
+letter_frequencies <- as.data.frame(letter_frequencies)
+names(letter_frequencies) = c("Letter", "Count")
+
+
+letter_frequencies = letter_frequencies %>%
+  mutate(Probability = Count / sum(Count)) %>%
+  select(-Count)
+
+
+```
+
+
+
+
+```{r, echo = FALSE, results = "hide"}
+
+library(mosaic)
+library(tidyverse)
+
+
+
+sentences <- c(
+    "1. She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+    "2. Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+    "3. The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+    "4. He carefully examined the document, looking for any clues that might help solve the mystery.",
+    "5. The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+    "6. Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+    "7. The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+    "8. They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+    "9. The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+    "10. Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+
+
+# Flatten the list and collapse into one big string
+all_text = readLines("brown_sentences.txt")
+
+# Remove everything but letters and convert to uppercase
+clean_text <- gsub("[^A-Za-z]", "", all_text)
+clean_text <- toupper(clean_text)
+letters <- unlist(str_split(clean_text, ""))
+
+# Calculate the frequency of each letter
+observed_letter_frequencies <- table(letters)
+
+observed_letter_frequencies <- as.data.frame(observed_letter_frequencies)
+names(observed_letter_frequencies) = c("Letter", "Count")
+
+# Calculate probabilities (normalize counts)
+observed_letter_frequencies = observed_letter_frequencies %>%
+  mutate(Probability = Count / sum(Count)) %>%
+  select(-Count)
+
+
+for (x in sentences) {
+  calculate_chi_squared_yes(x, expectedCounts)
+}
+
+
+
+
+
+
+
+
+
+```
+
+
+### Part B
+
+Of the 10 sentences, sentence #6, "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.", is most likely the one produced by a LLM and watermarked. We know since it's chi-squared based on letter frequencies is significantly higher than the other sentences. 
+
+
+
+
+
+
